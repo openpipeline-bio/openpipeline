@@ -9,7 +9,7 @@ meta = {
 }
 ## VIASH END
 
-file_input = meta["resources_dir"] + "/pbmc_1k_protein_v3_raw_feature_bc_matrix.h5mu"
+file_input = meta["resources_dir"] + "/pbmc_1k_protein_v3_filtered_feature_bc_matrix.h5mu"
 file_output = "output.h5mu"
 
 print("> Check whether cellbender works when it should be working")

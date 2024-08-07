@@ -45,11 +45,6 @@ target/docker/convert/from_10xh5_to_h5mu/from_10xh5_to_h5mu \
   --input "${OUT}_filtered_feature_bc_matrix.h5" \
   --input_metrics_summary "${OUT}_metrics_summary.csv" \
   --output "${OUT}_filtered_feature_bc_matrix.h5mu"
-  
-target/docker/convert/from_10xh5_to_h5mu/from_10xh5_to_h5mu \
-  --input "${OUT}_raw_feature_bc_matrix.h5" \
-  --input_metrics_summary "${OUT}_metrics_summary.csv" \
-  --output "${OUT}_raw_feature_bc_matrix.h5mu"
 
 # run single sample
 NXF_VER=21.10.6 nextflow \
