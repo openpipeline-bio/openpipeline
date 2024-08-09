@@ -131,41 +131,39 @@ jobs:
         git fetch origin ${{github.ref_name}} 
         git checkout -f --no-overlay origin/${{github.ref_name}} -- '.'
     
-    - uses: viash-io/viash-actions/setup@v5
+    - uses: viash-io/viash-actions/setup@v6
 
     - name: Remove target folder from .gitignore
       run: |
         # allow publishing the target folder
         sed -i '/^\/target\/$/d' .gitignore
 
-    - uses: viash-io/viash-actions/ns-build@v5
+    - uses: viash-io/viash-actions/ns-build@v6
       with:
         config_mod: |
           .functionality.version := "${{ inputs.version || format('{0}_build', github.ref_name) }}"
           .platforms[.type == 'docker'].target_tag := '${{ github.event_name == 'push' && (inputs.version || format('{0}_build', github.ref_name)) || inputs.target_tag }}'
         parallel: true
-        query: ^(?!workflows)
+        query: ^(?!workflows|test_workflows)
     
-    - uses: viash-io/viash-actions/ns-build@v5
+    - uses: viash-io/viash-actions/ns-build@v6
       with:
         config_mod: .functionality.version := "${{ inputs.version || format('{0}_build', github.ref_name) }}"
         parallel: true
         query: ^workflows
   
     - name: Build nextflow schemas
-      uses: viash-io/viash-actions/pro/build-nextflow-schemas@v5
+      uses: viash-io/viash-actions/pro/build-nextflow-schemas@v6
       with:
-        components: src
-        workflows: src
+        target_dir: target/nextflow
         viash_pro_token: ${{ secrets.GTHB_PAT }}
         tools_version: 'main_build'
         enable_dataset_input: true
    
     - name: Build parameter files
-      uses: viash-io/viash-actions/pro/build-nextflow-params@v5
+      uses: viash-io/viash-actions/pro/build-nextflow-params@v6
       with:
-        workflows: src
-        components: src
+        target_dir: target/nextflow
         viash_pro_token: ${{ secrets.GTHB_PAT }}
         tools_version: 'main_build'
 
@@ -178,16 +176,16 @@ jobs:
         branch:  ${{ !inputs.deploy_branch && format('{0}_build', github.ref_name) || inputs.deploy_branch  }}
     - name: "List components"
       id: ns_list
-      uses: viash-io/viash-actions/ns-list@v5
+      uses: viash-io/viash-actions/ns-list@v6
       with:
         platform: docker
         src: src
         format: json
-        query_namespace: ^(?!workflows)
+        query_namespace: ^(?!workflows|test_workflows)
 
     - name: "List workflows"
       id: ns_list_workflows
-      uses: viash-io/viash-actions/ns-list@v5
+      uses: viash-io/viash-actions/ns-list@v6
       with:
         src: src
         format: json
@@ -235,10 +233,10 @@ jobs:
 
     - uses: actions/checkout@v4
 
-    - uses: viash-io/viash-actions/setup@v5
+    - uses: viash-io/viash-actions/setup@v6
 
     - name: Build container
-      uses: viash-io/viash-actions/ns-build@v5
+      uses: viash-io/viash-actions/ns-build@v6
       with:
         config_mod: |
           .functionality.version := "${{ inputs.version || format('{0}_build', github.ref_name) }}"
@@ -255,7 +253,7 @@ jobs:
         password: ${{ secrets.GTHB_PAT }}
 
     - name: Push container
-      uses: viash-io/viash-actions/ns-build@v5
+      uses: viash-io/viash-actions/ns-build@v6
       with:
         config_mod: .functionality.version := "${{ inputs.version || format('{0}_build', github.ref_name) }}"
         platform: docker

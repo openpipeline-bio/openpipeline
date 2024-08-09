@@ -13,55 +13,8 @@ on:
       - '*'
 
 jobs:
-  list:
-    runs-on: ubuntu-latest
-      
-    outputs:
-      component_matrix: ${{ steps.set_matrix.outputs.components }}
-      workflow_matrix: ${{ steps.set_matrix.outputs.workflows }}
-    steps:
-    - uses: actions/checkout@v4
-
-    - uses: viash-io/viash-actions/setup@v5
-
-    - id: ns_list_components
-      uses: viash-io/viash-actions/ns-list@v5
-      with:
-        platform: docker
-        format: json
-        query_namespace: ^(?!workflows)
-
-    - id: ns_list_workflows
-      uses: viash-io/viash-actions/ns-list@v5
-      with:
-        format: json
-        query_namespace: ^workflows
-
-    - id: set_matrix
-      run: |
-        echo "components=$(jq -c '[ .[] | 
-          { 
-            "name": .functionality.name,
-            "namespace_separator": .platforms | map(select(.type == "docker"))[0].namespace_separator,
-            "namespace": .functionality.namespace,
-            "config": .info.config,
-            "dir": .info.config | capture("^(?<dir>.*\/)").dir
-          }
-        ]' ${{ steps.ns_list_components.outputs.output_file }} )" >> $GITHUB_OUTPUT
-
-        echo "workflows=$(jq -c '[ .[] | 
-          { 
-            "name": $config.functionality.name,
-            "namespace": $config.functionality.namespace,
-            "main_script": ((.info.config | capture("^(?<dir>.*\/)").dir) + "/" + (.functionality.test_resources | map(select(.type == "nextflow_script")) | unique | .[].path )),
-            "config": .info.config,
-            "entry": .functionality.test_resources | map(select(.type == "nextflow_script")) | .[].entrypoint
-          }
-        ]' ${{ steps.ns_list_workflows.outputs.output_file }} )" >> $GITHUB_OUTPUT
-
   push_documentation:
     runs-on: ubuntu-latest
-    needs: [ list ]
 
     steps:
       - uses: actions/checkout@v4
@@ -74,7 +27,7 @@ jobs:
           path: website
           token: ${{ secrets.GTHB_PAT }}
 
-      - uses: viash-io/viash-actions/setup@v5
+      - uses: viash-io/viash-actions/setup@v6
       
       - name: Get tag to use
         id: get_tag
@@ -83,15 +36,30 @@ jobs:
           TAG_OR_BRANCH_NAME=${INPUT_TAG:-"${{ github.ref_name }}"}
           echo "tag=$TAG_OR_BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      - uses: viash-io/viash-actions/pro/generate-documentation-qmd@v5
+      - uses: viash-io/viash-actions/pro/generate-documentation-qmd@v6
         with:
           project_directory: openpipelines
-          src: ./
-          output_dir: ../website/components/
-          dest_path: "{type}s/{namespace}/{name}.qmd"
+          src: src
+          query: '^(?!workflows|test_workflows)'
+          output_dir: ../website/components/modules/
+          dest_path: "{namespace}/{name}.qmd"
           viash_pro_token: ${{ secrets.GTHB_PAT }}
           tools_version: main_build
           ref: "${{ steps.get_tag.outputs.tag }}"
+          clean: true
+
+
+      - uses: viash-io/viash-actions/pro/generate-documentation-qmd@v6
+        with:
+          project_directory: openpipelines
+          src: src
+          query: '^workflows'
+          output_dir: ../website/components/
+          dest_path: "{namespace}/{name}.qmd"
+          viash_pro_token: ${{ secrets.GTHB_PAT }}
+          tools_version: main_build
+          ref: "${{ steps.get_tag.outputs.tag }}"
+          clean: true
 
       - name: Create Pull Request
         env:

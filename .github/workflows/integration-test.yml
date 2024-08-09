@@ -35,7 +35,7 @@ jobs:
       cache_key: ${{ steps.cache.outputs.cache_key }}
 
     steps:
-    - uses: viash-io/viash-actions/project/sync-and-cache-s3@v5
+    - uses: viash-io/viash-actions/project/sync-and-cache-s3@v6
       id: cache 
       with:
         s3_bucket: $s3_bucket
@@ -65,7 +65,7 @@ jobs:
       with:
         ref: 'integration_build'
 
-    - uses: viash-io/viash-actions/setup@v5
+    - uses: viash-io/viash-actions/setup@v6
 
     - uses: nf-core/setup-nextflow@v2.0.0
 
@@ -99,6 +99,17 @@ jobs:
         echo "Not removing ${to_not_remove[@]}"
         find ./resources_test/ "${to_not_remove[@]}" -type f -exec rm {} +
         tree ./resources_test/
+
+    - name: Build test dependencies
+      uses: viash-io/viash-actions/ns-build@v6
+      with:
+        config_mod: |
+          .functionality.version := 'integration_build'
+          .platforms[.type == 'docker'].target_tag := 'integration_build'
+        platform: 'docker|nextflow'
+        src: ${{ matrix.component.dir }}
+        query: "^test_workflows"
+        setup: build
 
     - name: Run integration test
       timeout-minutes: 60

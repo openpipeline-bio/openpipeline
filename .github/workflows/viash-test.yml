@@ -41,13 +41,17 @@ jobs:
       with:
         fetch-depth: 0 
 
-    - uses: viash-io/viash-actions/setup@v5
+    # Remove unnecessary files to free up space. Otherwise, we get 'no space left on device.'
+    - uses: data-intuitive/reclaim-the-bytes@v2
+
+    - uses: viash-io/viash-actions/setup@v6
 
     - name: Check if all config can be parsed if there is no unicode support
       run: |
         LANG=C viash ns list > /dev/null
+        JAVA_TOOL_OPTIONS=-Dfile.encoding=ascii viash ns build --parallel --setup meh > /dev/null
 
-    - uses: viash-io/viash-actions/project/sync-and-cache-s3@v5
+    - uses: viash-io/viash-actions/project/sync-and-cache-s3@v6
       id: cache
       with:
         s3_bucket: $s3_bucket
@@ -55,14 +59,14 @@ jobs:
         cache_key_prefix: resources_test__
 
     - id: ns_list
-      uses: viash-io/viash-actions/ns-list@v5
+      uses: viash-io/viash-actions/ns-list@v6
       with:
         platform: docker
         format: json
-        query_namespace: ^(?!workflows)
+        query_namespace: ^(?!workflows|test_workflows)
 
     - id: ns_list_filtered
-      uses: viash-io/viash-actions/project/detect-changed-components@v5
+      uses: viash-io/viash-actions/project/detect-changed-components@v6
       with:
         input_file: "${{ steps.ns_list.outputs.output_file }}"
 
@@ -95,7 +99,7 @@ jobs:
 
     - uses: actions/checkout@v4
 
-    - uses: viash-io/viash-actions/setup@v5
+    - uses: viash-io/viash-actions/setup@v6
 
     # use cache
     - name: Cache resources data
@@ -163,10 +167,10 @@ jobs:
         password: ${{ env.NVIDIA_PASSWORD }}
 
     - name: Run test
-      timeout-minutes: 30
+      timeout-minutes: 40
       run: |
         viash test \
           "${{ matrix.component.config }}" \
           --cpus 4 \
-          --memory "12gb"
+          --memory "14gb"
 
