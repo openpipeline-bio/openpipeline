@@ -120,7 +120,7 @@ jobs:
       timeout-minutes: 60
       run: |
         # todo: replace with viash test command
-        export NXF_VER=22.04.5
+        export NXF_VER=22.10.7
         nextflow run . \
           -main-script "${{ matrix.component.main_script }}" \
           -entry "${{ matrix.component.entry }}" \
