@@ -1,0 +1,152 @@
+functionality:
+  name: integration_qc
+  namespace: "workflows/qc"
+  description: |
+    Workflow to add integration qc metrics to a MuData and generate an integration qc output report.
+      
+  authors:
+    - __merge__: /src/authors/dorien_roosen.yaml
+      roles: [ author, maintainer ]
+  argument_groups:
+    - name: Inputs
+      arguments:
+        - name: "--input"
+          type: file
+          description: Input h5mu file
+          direction: input
+          required: true
+          example: input.h5mu
+        - name: "--modality"
+          type: string
+          default: "rna"
+        - name: "--var_gene_names"
+          type: string
+          required: false
+          description: |
+            The name of the adata var column containing gene names. When no gene_name_layer is provided, the var index will be used.
+        - name: "--bio_conservation_metrics"
+          type: string
+          multiple: true
+          multiple_sep: ";"
+          choices: 
+            - nmi
+            - ari
+            - asw_label
+            - isolated_label_f1
+            - isolated_label_asw
+            - clisi_graph
+          default: nmi;ari;asw_label
+          description: |
+            The metrics to be calculated to assess biological conservation. 
+            The provided metrics will be aggregated into a biological conservation score.
+        - name: "--batch_correction_metrics"
+          type: string
+          multiple: true
+          multiple_sep: ";"
+          choices:
+            - asw_batch
+            - pcr
+            - graph_connectivity
+            - ilisi_graph
+            - kbet
+          default: asw_batch;pcr;graph_connectivity
+          description: |
+            The metrics to be calculated for the batch correction. 
+            The provided metrics will be aggregated into a batch correction score.
+            
+    - name: Input annotations
+      arguments:
+        - name: "--obsm_embeddings"
+          type: string
+          required: true
+          example: "X_scGPT"
+          description: |
+            The name of the adata.obsm array containing scGPT cell embeddings.
+        - name: "--obs_batch_label"
+          type: string
+          example: "sample"
+          required: true
+          description: |
+            The name of the adata obs column containing the batch labels.
+        - name: "--obs_cell_label"
+          type: string
+          example: "cell_type"
+          required: true
+          description: |
+            The name of the adata obs column containing the cell type labels.
+        - name: "--obs_cluster"
+          type: string
+          example: "cluster"
+          required: true
+          description: |
+            The name of the adata obs column containing the cluster labels.
+        - name: "--obsp_neighbor_connectivities"
+          type: string
+          example: "connectivities"
+          required: true
+          description: |
+            The name of the adata obsp object containing the neighbor connectivities.
+        - name: "--uns_neighbors"
+          type: string
+          example: "neighbors"
+          required: true
+          description:
+            The name of the adata uns object containing the neighbors information.
+        - name: "--obsm_umap"
+          type: string
+          example: "X_scGPT_umap"
+          required: true
+          description: "The obsm slot containing UMAP embeddings."
+
+    - name: Outputs
+      arguments:
+        - name: "--output"
+          type: file
+          required: true
+          description: Name of the integration qc output pdf report.
+          direction: output
+          example: output.pdf
+        - name: "--output_raw"
+          type: boolean_true
+          description: |
+            If provided, the raw data (unrendered report (md), figures (png) and metrics (json)) will be published.
+        - name: "--output_md_report"
+          type: file
+          direction: output
+          default: report.qmd
+          must_exist: False
+          description: |
+            Name of the unrendered report file (qmd). Will only be saved if --output_raw is set to true.
+        - name: "--output_umap_label_fig"
+          type: file
+          direction: output
+          default: umap_label.png
+          must_exist: False
+          description: |
+            Name of the UMAP label figure (png). Will only be saved if --output_raw is set to true.
+        - name: "--output_umap_batch_fig"
+          type: file
+          direction: output
+          must_exist: False
+          default: umap_batch.png
+          description: |
+            Name of the UMAP batch figure (png). Will only be saved if --output_raw is set to true.
+        - name: "--output_metrics"
+          type: file
+          direction: output
+          must_exist: False
+          default: metrics.json
+          description: |
+            Name of the json file containing integration metrics (json). Will only be saved if --output_raw is set to true.       
+
+
+  dependencies:
+    - name: qc/integration_metrics
+    - name: qc/integration_report
+  resources:
+    - type: nextflow_script
+      path: main.nf
+      entrypoint: run_wf
+   
+platforms:
+  - type: nextflow

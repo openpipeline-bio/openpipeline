@@ -1,0 +1,171 @@
+functionality:
+  name: integration_metrics
+  namespace: "qc"
+  description: |
+    Calculation integration qc metrics and aggregate scores for bio conservation and batch correction.
+    The calculated metrics and aggregate scores are stored in the uns column.
+    All metric calculations are based on the scib library:
+      - publication: https://doi.org/10.1038/s41592-021-01336-8
+      - code: https://github.com/theislab/scib/
+      - documentation: https://scib.readthedocs.io/
+
+    Bio conservation metrics:
+      - nmi_score: scib.metrics.nmi
+      - ari_score: scib.metrics.ari
+      - asw_label: scib.metrics.silhouette
+      - isolated_label_f1: scib.metrics.isolated_labels 
+      - isolated_label_asw: scib.metrics.isolated_labels
+      - clisi_graph: scib.metrics.clisi_graph
+    Note that the scib bio conservation metrics for cell cycle conservation, HVG conservation and trajectory conservation are not currently provided, 
+    as this requires integrated count matrices and pseudo time values to be calculated, which is not currently supported in OpenPipeline.
+
+    Batch correction metrics:
+      - asw_batch: scib.metrics.silhouette_batch
+      - pcr_score: scib.metrics.pcr_comparison
+      - graph_connectivity: scib.metrics.graph_connectivity
+      - ilisi_graph: scib.metrics.ilisi_graph
+      - kbet: scib.metrics.kBET
+
+    Aggregate scores:
+      - avg_bio: mean of calculated bio conservation metrics
+      - avg_batch: mean of calculated batch correction metrics
+      - overall_integration_score: weighted mean of bio and batch scores (60/40 ratio)
+      
+  authors:
+    - __merge__: /src/authors/dorien_roosen.yaml
+      roles: [ author ]
+  argument_groups:
+    - name: Inputs
+      arguments:
+        - name: "--input"
+          type: file
+          description: Input h5mu file
+          direction: input
+          required: true
+          example: input.h5mu
+        - name: "--modality"
+          type: string
+          default: "rna"
+        - name: "--bio_conservation_metrics"
+          type: string
+          multiple: true
+          multiple_sep: ";"
+          choices: 
+            - nmi
+            - ari
+            - asw_label
+            - isolated_label_f1
+            - isolated_label_asw
+            - clisi_graph
+          default: nmi;ari;asw_label
+          description: |
+            The metrics to be calculated to assess biological conservation. 
+            The provided metrics will be aggregated into a biological conservation score.
+        - name: "--batch_correction_metrics"
+          type: string
+          multiple: true
+          multiple_sep: ";"
+          choices:
+            - asw_batch
+            - pcr
+            - graph_connectivity
+            - ilisi_graph
+            - kbet
+          default: asw_batch;pcr;graph_connectivity
+          description: |
+            The metrics to be calculated for the batch correction. 
+            The provided metrics will be aggregated into a batch correction score.
+
+    - name: Input Annotations
+      arguments:
+        - name: "--obsm_embeddings"
+          type: string
+          required: true
+          example: "X_scGPT"
+          description: |
+            The name of the adata.obsm array containing scGPT cell embeddings.
+        - name: "--obs_batch_label"
+          type: string
+          example: "sample"
+          required: true
+          description: |
+            The name of the adata obs column containing the batch labels.
+        - name: "--obs_cell_label"
+          type: string
+          example: "cell_type"
+          required: true
+          description: |
+            The name of the adata obs column containing the cell type labels.
+        - name: "--obs_cluster"
+          type: string
+          example: "cluster"
+          required: true
+          description: |
+            The name of the adata obs column containing the cluster labels.
+        - name: "--uns_neighbors"
+          type: string
+          example: "neighbors"
+          required: true
+          description:
+            The name of the adata uns object containing the neighbors information.
+        - name: "--obsp_neighbor_connectivities"
+          type: string
+          example: "connectivities"
+          required: true
+          description: |
+            The name of the adata obsp object containing the neighbor connectivities.
+
+
+    - name: Outputs
+      arguments:
+        - name: "--output"
+          type: file
+          description: Output h5mu file.
+          direction: output
+          example: output.h5mu
+        - name: "--output_compression"
+          type: string
+          description: The compression format to be used on the output h5mu object.
+          choices: ["gzip", "lzf"]
+          required: false
+          example: "gzip"
+
+  resources:
+    - type: python_script
+      path: script.py
+   
+platforms:
+  - type: docker
+    image: rocker/r2u:22.04
+    setup:
+      - type: apt
+        packages: 
+          - procps
+          - libhdf5-dev
+          - gfortran
+          - cmake
+          - libopenblas-dev
+          - libgeos-dev
+          - python3-pip
+          - python3-dev
+          - python-is-python3
+      - type: python
+        __merge__: [ /src/base/requirements/anndata_mudata.yaml ]
+      - type: python
+        packages:
+          - scib==1.1.5
+          - rpy2==3.5.16
+          - anndata2ri
+      - type: r
+        github: [ theislab/kBET ]
+      - type: docker
+        run: |
+          cd "$(pip show scib | grep Location | cut -d ' ' -f 2)/scib/knn_graph" && \
+          g++ -std=c++11 -O3 knn_graph.cpp -o knn_graph.o
+
+    test_setup:
+      - type: python
+        __merge__: [ /src/base/requirements/viashpy.yaml, .]
+  - type: nextflow
+    directives:
+      label: [singlecpu, lowmem]

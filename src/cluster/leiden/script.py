@@ -96,7 +96,7 @@ class SharedNumpyMatrix():
         self._memory = shared_memory
         self._dtype = dtype
         self._shape = shape
-    
+
     @classmethod
     def from_numpy(cls, memory_manager: managers.SharedMemoryManager, array: npt.ArrayLike):
         shm = memory_manager.SharedMemory(size=array.nbytes)

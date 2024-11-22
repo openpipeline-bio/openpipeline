@@ -425,5 +425,63 @@ def test_cellranger_multi_with_alternative_names(run_component, random_path):
     # check for vdj data
     assert (outputpath / "per_sample_outs/run/vdj_t/filtered_contig_annotations.csv").is_file()
 
+
+def test_cellranger_multi_with_alternative_names(run_component, random_path):
+    import shutil
+    import gzip
+
+    input_dir = random_path()
+    input_dir.mkdir()
+
+    # Note: if one input file does not use any lanes, none of the input files should use lanes
+    # remove lanes
+    input1_R1_link = input_dir / "5k_human_antiCMV_T_TBNK_connect_GEX_1_subset_S1_R1_001.fastq.gz"
+    input1_R2_link = input_dir / "5k_human_antiCMV_T_TBNK_connect_GEX_1_subset_S1_R2_001.fastq.gz"
+    input2_R1_link = input_dir / "5k_human_antiCMV_T_TBNK_connect_AB_subset_S2_R1_001.fastq.gz"
+    input2_R2_link = input_dir / "5k_human_antiCMV_T_TBNK_connect_AB_subset_S2_R2_001.fastq.gz"
+    input3_R1_link = input_dir / "5k_human_antiCMV_T_TBNK_connect_VDJ_subset_S1_R1_001.fastq"
+    input3_R2_link = input_dir / "5k_human_antiCMV_T_TBNK_connect_VDJ_subset_S1_R2_001.fastq"
+
+    # copy files
+    shutil.copy(input1_R1, input1_R1_link)
+    shutil.copy(input1_R2, input1_R2_link)
+    shutil.copy(input2_R1, input2_R1_link)
+    shutil.copy(input2_R2, input2_R2_link)
+
+    with gzip.open(input3_R1, 'rb') as f_in:
+        with open(input3_R1_link, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+    with gzip.open(input3_R2, 'rb') as f_in:
+        with open(input3_R2_link, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+    outputpath = random_path()
+    args = [
+            "--output", outputpath,
+            "--input", input1_R1_link,
+            "--input", input1_R2_link,
+            "--abc_input", input2_R1_link,
+            "--abc_input", input2_R2_link,
+            "--vdj_input", input3_R1_link,
+            "--vdj_input", input3_R2_link,
+            "--gex_reference", gex_reference,
+            "--vdj_reference", vdj_reference,
+            "--feature_reference", feature_reference,
+            "--library_id", "5k_human_antiCMV_T_TBNK_connect_GEX_1_subset",
+            "--library_type", "Gene Expression"]
+    run_component(args)
+
+    # check for raw data
+    assert (outputpath / "multi/count/raw_feature_bc_matrix.h5").is_file()
+
+    # check for metrics summary
+    assert (outputpath / "per_sample_outs/run/metrics_summary.csv").is_file()
+
+    # check for filtered gex+ab data
+    assert (outputpath / "per_sample_outs/run/count/sample_filtered_feature_bc_matrix.h5").is_file()
+
+    # check for vdj data
+    assert (outputpath / "per_sample_outs/run/vdj_t/filtered_contig_annotations.csv").is_file()
+
 if __name__ == '__main__':
     sys.exit(pytest.main([__file__]))
