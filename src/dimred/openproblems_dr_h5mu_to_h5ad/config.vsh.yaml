@@ -1,0 +1,69 @@
+name: openproblems_dr_h5mu_to_h5ad
+namespace: "dimred"
+
+argument_groups:
+  - name: Inputs
+    arguments:
+      - name: "--input"
+        type: file
+        description: Input h5mu file
+        direction: input
+        required: true
+        example: input.h5mu
+
+      - name: "--input_modality"
+        type: string
+        default: "rna"
+        required: false
+
+      - name: "--input_layer_counts"
+        type: string
+        description: In which layer to find the raw counts. If not provided, the raw counts are assumed to be in the .X object.
+        required: false
+
+      - name: "--input_layer_normalized"
+        type: string
+        description: In which layer to find the log normalized counts. If not provided, the raw counts are assumed to be in the .X object.
+        required: false
+        default: "log_normalized"
+      
+      - name: "--input_var_hvg_score"
+        type: string
+        description: In which obsm to find the HVG scores. If not provided, the HVG scores are not passed.
+        required: false
+
+  - name: Outputs
+    arguments:
+      - name: "--output"
+        alternatives: ["-o"]
+        type: file
+        description: Output h5mu file.
+        direction: output
+        required: true
+        example: output.h5mu
+    
+resources:
+  - type: python_script
+    path: script.py
+
+# test_resources:
+#   - type: python_script
+#     path: test.py
+#   - path: /resources_test/pbmc_1k_protein_v3
+
+engines:
+  - type: docker
+    image: python:3.12-slim
+    setup:
+      - type: apt
+        packages:
+          - procps
+      - type: python
+        __merge__: [/src/base/requirements/anndata_mudata.yaml, .]
+    __merge__: [/src/base/requirements/python_test_setup.yaml, .]
+
+runners:
+  - type: executable
+  - type: nextflow
+    directives:
+      label: [highcpu, midmem]

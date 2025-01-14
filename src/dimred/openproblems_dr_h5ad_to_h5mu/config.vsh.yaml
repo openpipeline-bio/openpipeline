@@ -1,0 +1,66 @@
+name: openproblems_dr_h5ad_to_h5mu
+namespace: "dimred"
+
+
+argument_groups:
+  - name: Inputs
+    arguments:
+      - name: "--input_dataset"
+        type: file
+        description: Input h5mu file
+        direction: input
+        required: true
+        example: input.h5mu
+
+      - name: "--input_output"
+        type: file
+        description: Method output h5ad file
+        direction: input
+        required: true
+        example: input.h5ad
+
+      - name: "--input_modality"
+        type: string
+        default: "rna"
+        required: false
+
+  - name: Outputs
+    arguments:
+      - name: "--output"
+        alternatives: ["-o"]
+        type: file
+        description: Output h5mu file.
+        direction: output
+        required: true
+        example: output.h5mu
+
+      - name: "--output_obsm_key"
+        description: Key in the .obsm object to use as input.
+        type: string
+        required: false
+    
+resources:
+  - type: python_script
+    path: script.py
+
+# test_resources:
+#   - type: python_script
+#     path: test.py
+#   - path: /resources_test/pbmc_1k_protein_v3
+
+engines:
+  - type: docker
+    image: python:3.12-slim
+    setup:
+      - type: apt
+        packages:
+          - procps
+      - type: python
+        __merge__: [/src/base/requirements/anndata_mudata.yaml, .]
+    __merge__: [/src/base/requirements/python_test_setup.yaml, .]
+
+runners:
+  - type: executable
+  - type: nextflow
+    directives:
+      label: [highcpu, midmem]

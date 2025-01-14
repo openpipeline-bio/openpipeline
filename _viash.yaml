@@ -25,3 +25,9 @@ config_mods: |
   .resources += {path: '/src/workflows/utils/labels.config', dest: 'nextflow_labels.config'}
   .runners[.type == 'nextflow'].directives.tag := '$id'
   .runners[.type == 'nextflow'].config.script := 'includeConfig("nextflow_labels.config")'
+
+repositories:
+  - type: github
+    name: openproblems_task_dimensionality_reduction
+    repo: openproblems-bio/task_dimensionality_reduction
+    tag: build/main
