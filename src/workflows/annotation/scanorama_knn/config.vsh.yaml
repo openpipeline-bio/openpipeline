@@ -1,0 +1,165 @@
+name: "scanorama_knn"
+namespace: "workflows/annotation"
+description: "Cell type annotation workflow by performing scanorama integration of reference and query dataset followed by KNN label transfer."
+authors:
+  - __merge__: /src/authors/dorien_roosen.yaml
+    roles: [ author, maintainer ]
+  - __merge__: /src/authors/weiwei_schultz.yaml
+    roles: [ contributor ]
+
+argument_groups:
+  - name: Query Input
+    arguments:
+      - name: "--id"
+        required: true
+        type: string
+        description: ID of the sample.
+        example: foo
+      - name: "--input"
+        required: true
+        type: file
+        description: Input dataset consisting of the (unlabeled) query observations. The dataset is expected to be pre-processed in the same way as --reference.
+        example: input.h5mu
+      - name: "--modality"
+        description: Which modality to process. Should match the modality of the --reference dataset.
+        type: string
+        default: "rna"
+        required: false
+      - name: "--input_obsm_embedding"
+        example: "X_pca"
+        type: string
+        description: Embedding .obsm column to use as input for integration. Should match the embedding .obsm columng of the --reference dataset.
+      - name: "--input_obs_batch_label"
+        type: string
+        description: "The .obs field in the input (query) dataset containing the batch labels."
+        example: "sample"
+        required: true
+
+  - name: Reference input
+    arguments:
+      - name: "--reference"
+        required: true
+        type: file
+        description: Reference dataset consisting of the labeled observations to train the KNN classifier on. The dataset is expected to be pre-processed in the same way as the --input query dataset.
+        example: reference.h5mu
+      - name: "--reference_obs_targets"
+        type: string
+        example: [ ann_level_1, ann_level_2, ann_level_3, ann_level_4, ann_level_5, ann_finest_level ]
+        required: true
+        multiple: true
+        description: The `.obs` key(s) of the target labels to transfer.
+      - name: "--reference_obs_batch_label"
+        type: string
+        description:  "The .obs field in the reference dataset containing the batch labels."
+        example: "sample"
+        required: true
+
+  - name: Scanorama integration options
+    arguments:
+      - name: "--knn"
+        type: integer
+        description: "Number of nearest neighbors to use for matching during scanorama integration."
+        default: 20
+      - name: "--batch_size"
+        type: integer
+        description: "The batch size used in the alignment vector computation. Useful when integrating very large (>100k samples) datasets. Set to large value that runs within available memory."
+        default: 5000
+      - name: "--sigma"
+        type: double
+        description: "Correction smoothing parameter on Gaussian kernel."
+        default: 15
+      - name: "--approx"
+        type: boolean
+        description: "Use approximate nearest neighbors with Python annoy; greatly speeds up matching runtime."
+        default: True
+      - name: "--alpha"
+        type: double
+        description: "Alignment score minimum cutoff"
+        default: 0.1
+
+  - name: Leiden clustering options
+    arguments:
+      - name: "--leiden_resolution"
+        type: double
+        description: Control the coarseness of the clustering. Higher values lead to more clusters.
+        min: 0
+        default: [1]
+        multiple: true
+
+  - name: Neighbor classifier arguments
+    arguments:
+      - name: "--weights"
+        type: string
+        default: "uniform"
+        choices: ["uniform", "distance"]
+        description: |
+          Weight function used in prediction. Possible values are:
+          `uniform` (all points in each neighborhood are weighted equally) or 
+          `distance` (weight points by the inverse of their distance)
+      - name: "--n_neighbors"
+        type: integer
+        default: 15
+        required: false
+        description: |
+          The number of neighbors to use in k-neighbor graph structure used for fast approximate nearest neighbor search with PyNNDescent. 
+          Larger values will result in more accurate search results at the cost of computation time.
+
+  - name: "Outputs"
+    arguments:
+      - name: "--output"
+        type: file
+        required: true
+        direction: output
+        description: The query data in .h5mu format with predicted labels predicted from the classifier trained on the reference.
+        example: output.h5mu
+      - name: "--output_obs_predictions"
+        type: string
+        required: false
+        multiple: true
+        description: |
+          In which `.obs` slots to store the predicted cell labels.
+          If provided, must have the same length as `--reference_obs_targets`.
+          If empty, will default to the `reference_obs_targets` combined with the `"_pred"` suffix.
+      - name: "--output_obs_probability"
+        type: string
+        required: false
+        multiple: true
+        description: |
+          In which `.obs` slots to store the probability of the predictions.
+          If provided, must have the same length as `--reference_obs_targets`.
+          If empty, will default to the `reference_obs_targets` combined with the `"_probability"` suffix.
+      - name: "--output_obsm_integrated"
+        type: string
+        default: "X_integrated_scanorama"
+        required: false
+        description: "In which .obsm slot to store the integrated embedding."
+      - name: "--output_compression"
+        type: string
+        description: |
+          The compression format to be used on the output h5mu object.
+        choices: ["gzip", "lzf"]
+        required: false
+        example: "gzip"
+        
+dependencies:
+  - name: workflows/integration/scanorama_leiden
+    alias: scanorama_leiden_workflow
+  - name: labels_transfer/pynndescent_knn
+  - name: dataflow/split_h5mu
+  - name: dataflow/concatenate_h5mu
+  - name: metadata/add_id
+  - name: metadata/copy_obs
+
+resources:
+  - type: nextflow_script
+    path: main.nf
+    entrypoint: run_wf
+
+test_resources:
+  - type: nextflow_script
+    path: test.nf
+    entrypoint: test_wf
+  - path: /resources_test/scgpt
+
+runners:
+  - type: nextflow
