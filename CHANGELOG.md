@@ -232,6 +232,8 @@
 
 * `labels_transfer/knn` component: Enable using additional distance functions for KNN classification (PR #830) and allow to perform KNN classification based on a pre-calculated neighborhood graph (PR #890).
 
+* `workflow/annotation/bbknn_knn` workflow: Cell-type annotation based on BBKNN integration with KNN label transfer (PR #891).
+
 ## MINOR CHANGES
 
 * Several components: bump python version (PR #901).
