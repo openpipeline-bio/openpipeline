@@ -207,18 +207,15 @@ test_resources:
 
 engines:
 - type: docker
-  image: python:3.12-slim
+  image: nvcr.io/nvidia/pytorch:23.09-py3
   setup:
-    - type: apt
+    - type: python
+      __merge__: [/src/base/requirements/anndata_mudata.yaml, .]
       packages:
-        - procps
-    - type: python
-      __merge__: [ /src/base/requirements/scanpy.yaml, .]
-    - type: python
-      packages:
-        - scvi-tools==1.1.5
-    - type: python
-      __merge__: [ /src/base/requirements/anndata_mudata.yaml, .]
+        - scvi-tools~=1.0.3      
+        - jaxlib<0.4.23
+        - jax<0.4.23
+        - torch<2.6.0
   __merge__: [ /src/base/requirements/python_test_setup.yaml, .]
 runners:
   - type: executable

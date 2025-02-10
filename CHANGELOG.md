@@ -28,6 +28,8 @@
 
 * `utils/subset_vars`: Convert .var column used for subsetting of dtype "boolean" to dtype "bool" when it doesn't contain NaN values (PR #959).
 
+* `annotate/scanvi`: Change base image for running scanvi to pin pytorch version and enable gpu processing (PR #966).
+
 # openpipelines 2.0.0
 
 ## BREAKING CHANGES
