@@ -1,0 +1,205 @@
+name: "harmony_knn"
+namespace: "workflows/annotation"
+description: "Cell type annotation workflow by performing harmony integration of reference and query dataset followed by KNN label transfer."
+info:
+  name: "Harmony integration followed by KNN label transfer"
+  test_dependencies:
+    - name: harmony_knn_test
+      namespace: test_workflows/annotation
+authors:
+  - __merge__: /src/authors/dorien_roosen.yaml
+    roles: [ author, maintainer ]
+  - __merge__: /src/authors/weiwei_schultz.yaml
+    roles: [ contributor ]
+
+argument_groups:
+  - name: Query Input
+    arguments:
+      - name: "--id"
+        required: true
+        type: string
+        description: ID of the sample.
+        example: foo
+      - name: "--input"
+        required: true
+        type: file
+        description: Input dataset consisting of the (unlabeled) query observations. The dataset is expected to be pre-processed in the same way as --reference.
+        example: input.h5mu
+      - name: "--modality"
+        description: Which modality to process. Should match the modality of the --reference dataset.
+        type: string
+        default: "rna"
+        required: false
+      - name: "--input_layer"
+        description: The layer of the input dataset to process if .X is not to be used. Should contain log normalized counts.
+        required: false
+        type: string
+      - name: "--input_obs_batch_label"
+        type: string
+        description: "The .obs field in the input (query) dataset containing the batch labels."
+        example: "sample"
+        required: true
+      - name: "--input_var_gene_names"
+        type: string
+        required: false
+        description: |
+          The .var field in the input (query) dataset containing gene names; if not provided, the .var index will be used.
+      - name: "--input_reference_gene_overlap"
+        type: integer
+        default: 100
+        min: 1
+        description: | 
+          The minimum number of genes present in both the reference and query datasets.
+      - name: "--overwrite_existing_key"
+        type: boolean_true
+        description: If provided, will overwrite existing fields in the input dataset when data are copied during the reference alignment process.
+
+  - name: Reference input
+    arguments:
+      - name: "--reference"
+        required: true
+        type: file
+        description: Reference dataset consisting of the labeled observations to train the KNN classifier on. The dataset is expected to be pre-processed in the same way as the --input query dataset.
+        example: reference.h5mu
+      - name: "--reference_layer"
+        description: The layer of the reference dataset to process if .X is not to be used. Should contain log normalized counts.
+        required: false
+        type: string
+      - name: "--reference_obs_target"
+        type: string
+        example: cell_type
+        required: true
+        description: The `.obs` key of the target cell type labels to transfer.
+      - name: "--reference_var_gene_names"
+        type: string
+        required: false
+        description: |
+          The .var field in the reference dataset containing gene names; if not provided, the .var index will be used.
+      - name: "--reference_obs_batch_label"
+        type: string
+        description:  "The .obs field in the reference dataset containing the batch labels."
+        example: "sample"
+        required: true
+
+  - name: "Highly Variable Genes calculation options"
+    arguments:
+      - name: "--hvg_flavor"
+        alternatives: ["--filter_with_hvg_flavor"]
+        type: string
+        default: "seurat"
+        choices: ["seurat", "cell_ranger", "seurat_v3"]
+        description: |
+          Choose the flavor for identifying highly variable features. For the dispersion based methods
+          in their default workflows, Seurat passes the cutoffs whereas Cell Ranger passes n_top_features.
+      - name: "--hvg_n_top_features"
+        alternatives: ["--filter_with_hvg_n_top_genes"]
+        required: false
+        type: integer
+        description: Number of highly-variable features to keep. Mandatory if filter_with_hvg_flavor is set to 'seurat_v3'.
+
+  - name: PCA options
+    arguments:
+      - name: "--pca_num_components"
+        type: integer
+        example: 25
+        description: Number of principal components to compute. Defaults to 50, or 1 - minimum dimension size of selected representation.
+
+  - name: Harmony integration options
+    arguments:
+      - name: "--harmony_theta"
+        type: double
+        description: |
+          Diversity clustering penalty parameter. Can be set as a single value for all batch observations or as multiple values, one for each observation in the batches defined by --input_obs_batch_label. theta=0 does not encourage any diversity. Larger values of theta result in more diverse clusters."
+        min: 0
+        default: [2]
+        multiple: true
+
+  - name: Leiden clustering options
+    arguments:
+      - name: "--leiden_resolution"
+        type: double
+        description: Control the coarseness of the clustering. Higher values lead to more clusters.
+        min: 0
+        default: [1]
+        multiple: true
+
+  - name: Neighbor classifier arguments
+    arguments:
+      - name: "--knn_weights"
+        type: string
+        default: "uniform"
+        choices: ["uniform", "distance"]
+        description: |
+          Weight function used in prediction. Possible values are:
+          `uniform` (all points in each neighborhood are weighted equally) or 
+          `distance` (weight points by the inverse of their distance)
+      - name: "--knn_n_neighbors"
+        type: integer
+        default: 15
+        min: 5
+        required: false
+        description: |
+          The number of neighbors to use in k-neighbor graph structure used for fast approximate nearest neighbor search with PyNNDescent. 
+          Larger values will result in more accurate search results at the cost of computation time.
+
+  - name: "Outputs"
+    arguments:
+      - name: "--output"
+        type: file
+        required: true
+        direction: output
+        description: The query data in .h5mu format with predicted labels predicted from the classifier trained on the reference.
+        example: output.h5mu
+      - name: "--output_obs_predictions"
+        type: string
+        required: false
+        multiple: true
+        description: |
+          In which `.obs` slots to store the predicted cell labels.
+          If provided, must have the same length as `--reference_obs_targets`.
+          If empty, will default to the `reference_obs_targets` combined with the `"_pred"` suffix.
+      - name: "--output_obs_probability"
+        type: string
+        required: false
+        multiple: true
+        description: |
+          In which `.obs` slots to store the probability of the predictions.
+          If provided, must have the same length as `--reference_obs_targets`.
+          If empty, will default to the `reference_obs_targets` combined with the `"_probability"` suffix.
+      - name: "--output_obsm_integrated"
+        type: string
+        default: "X_integrated_harmony"
+        required: false
+        description: "In which .obsm slot to store the integrated embedding."
+      - name: "--output_compression"
+        type: string
+        description: |
+          The compression format to be used on the output h5mu object.
+        choices: ["gzip", "lzf"]
+        required: false
+        example: "gzip"
+
+dependencies:
+  - name: workflows/integration/harmony_leiden
+    alias: harmony_leiden_workflow
+  - name: labels_transfer/knn
+  - name: dataflow/split_h5mu
+  - name: dataflow/concatenate_h5mu
+  - name: dimred/pca
+  - name: feature_annotation/align_query_reference
+  - name: feature_annotation/highly_variable_features_scanpy
+
+resources:
+  - type: nextflow_script
+    path: main.nf
+    entrypoint: run_wf
+
+test_resources:
+  - type: nextflow_script
+    path: test.nf
+    entrypoint: test_wf
+  - path: /resources_test/pbmc_1k_protein_v3/pbmc_1k_protein_v3_mms.h5mu
+  - path: /resources_test/annotation_test_data/TS_Blood_filtered.h5mu
+
+runners:
+  - type: nextflow
