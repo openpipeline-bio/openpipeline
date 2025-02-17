@@ -30,6 +30,10 @@ argument_groups:
         default: "sample_id"
         required: false
         description: Column name discriminating between your batches.
+      - name: "--var_gene_names"
+        type: string
+        required: false
+        description: ".var column containing gene names. By default, use the index."
       - name: "--var_input"
         type: string
         required: false
@@ -217,6 +221,7 @@ resources:
   - type: python_script
     path: script.py
   - path: /src/utils/subset_vars.py
+  - path: /src/utils/set_var_index.py
   - path: /src/utils/compress_h5mu.py
 test_resources:
   - type: python_script

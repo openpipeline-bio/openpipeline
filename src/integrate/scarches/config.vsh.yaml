@@ -3,8 +3,12 @@ namespace: "integrate"
 description: "Performs reference mapping with scArches"
 authors:
   - __merge__: /src/authors/vladimir_shitov.yaml
+    roles: [ author ]
+  - __merge__: /src/authors/dorien_roosen.yaml
+    roles: [ maintainer ]
 argument_groups:
   - name: Inputs
+    description: Arguments related to the input (query) dataset
     arguments:
       - name: "--input"
         alternatives: ["-i"]
@@ -12,20 +16,63 @@ argument_groups:
         description: Input h5mu file to use as a query
         direction: input
         required: true
+      - name: "--layer"
+        type: string
+        description: Layer to be used for scArches, if .X is not to be used.
+        required: false
       - name: "--modality"
         type: string
         default: "rna"
         required: false
+      - name: "--input_obs_batch"
+        type: string
+        description: Name of the .obs column with batch information.
+        required: false
+      - name: "--input_obs_label"
+        type: string
+        description: Name of the .obs column with celltype information.
+        required: false
+      - name: "--input_var_gene_names"
+        type: string
+        description: Name of the .var column with gene names, if the var .index is not to be used.
+        required: false
+      - name: "--input_obs_categorical_covariate"
+        type: string
+        required: false
+        multiple: true
+        description: |
+          Keys in adata.obs that correspond to categorical data. These covariates can be added in
+          addition to the batch covariate and are also treated as nuisance factors
+          (i.e., the model tries to minimize their effects on the latent space).
+          Thus, these should not be used for biologically-relevant factors that you do _not_ want to correct for.
+          If multiple are provided, order should match the order of the covariates stored in the reference model.
+      - name: "--input_obs_continuous_covariate"
+        type: string
+        required: false
+        multiple: true
+        description: |
+          Keys in adata.obs that correspond to continuous data. These covariates can be added in
+          addition to the batch covariate and are also treated as nuisance factors
+          (i.e., the model tries to minimize their effects on the latent space). Thus, these should not be
+          used for biologically-relevant factors that you do _not_ want to correct for.
+          If multiple are provided, order should match the order of the covariates stored in the reference model.
+      - name: "--input_protein_expression_obsm_key"
+        description: Name of the .obsm key containing protein expression data. Required and relevant only for TOTALVI and MULTIVI models.
+        type: string
+        required: false
+      - name: "--input_protein_names_uns_key"
+        description: Name of the .uns key containing protein names, if the .obsm index is not to be used. Relevant only for TOTALVI and MULTIVI models.
+        type: string
+        required: false
+
+  - name: Reference
+    arguments:
       - name: "--reference"
         alternatives: ["-r"]
         type: file
-        description: Path to the directory with reference model or a web link. For HLCA use https://zenodo.org/record/6337966/files/HLCA_reference_model.zip
+        description: Path to the directory with reference model or a web link.
         required: true
-      - name: "--dataset_name"
-        type: string
-        default: "test_dataset"
-        required: false
-        description: Name of query dataset to use as a batch name. If not set, name of the input file is used
+
   - name: Outputs
     arguments:
       - name: "--output"
@@ -50,6 +97,25 @@ argument_groups:
         default: "X_integrated_scanvi"
         required: false
         description: "In which .obsm slot to store the resulting integrated embedding."
+  
+  - name: Arguments
+    arguments:
+      - name: "--obs_size_factor"
+        type: string
+        required: false
+        description: |
+          Key in adata.obs for size factor information. Instead of using library size as a size factor,
+          the provided size factor column will be used as offset in the mean of the likelihood.
+          Assumed to be on linear scale.
+      - name: "--unkown_celltype_label"
+        type: string
+        default: "Unknown"
+        description: |
+          The label to assign to cells in the query dataset with an unknown cell type, if cell type information is stored in the model.
+      - name: "--overwrite_existing_key"
+        type: boolean_true
+        description: If set to true and the layer, obs or var key already exists in the query/reference file, the key will be overwritten.
+
   - name: "Early stopping arguments"
     arguments:
       - name: "--early_stopping"
@@ -72,6 +138,7 @@ argument_groups:
         default: 0.0
         description: "Minimum change in the monitored quantity to qualify as an improvement, 
                       i.e. an absolute change of less than min_delta, will count as no improvement."
+
   - name: "Learning parameters"
     arguments:
       - name: "--max_epochs"
@@ -92,6 +159,7 @@ argument_groups:
         type: double
         default: 30
         min: 0
+
 resources:
   - type: python_script
     path: script.py
