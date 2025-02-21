@@ -56,7 +56,6 @@ def add_obs(random_h5mu_path):
 def test_simple_execution(run_component, random_h5mu_path):
     output_query_file = random_h5mu_path()
     output_reference_file = random_h5mu_path()
-    # input_file_transformed = copy_layer(input_file, "copied_counts")
 
     run_component(
         [
@@ -158,6 +157,115 @@ def test_simple_execution(run_component, random_h5mu_path):
     assert np.all(
         reference_adata.obs["_dataset"] == "reference"
     ), "Reference .obs _dataset should have value reference"
+
+
+def test_align_multiple_layers(run_component, random_h5mu_path):
+    output_query_file = random_h5mu_path()
+    output_reference_file = random_h5mu_path()
+
+    run_component(
+        [
+            "--input",
+            input_file,
+            "--modality",
+            "rna",
+            "--align_layers_lognormalized_counts",
+            "True",
+            "--input_layer_lognormalized",
+            "log_normalized",
+            "--input_obs_batch",
+            "sample_id",
+            "--reference",
+            reference_file,
+            "--reference_layer_lognormalized",
+            "log_normalized",
+            "--reference_obs_batch",
+            "donor_id",
+            "--reference_obs_label",
+            "cell_ontology_class",
+            "--reference_var_gene_names",
+            "ensemblid",
+            "--output_query",
+            output_query_file,
+            "--output_reference",
+            output_reference_file,
+        ]
+    )
+
+    query_adata = mu.read_h5mu(output_query_file).mod["rna"]
+    reference_adata = mu.read_h5mu(output_reference_file).mod["rna"]
+
+    expected_layers = ["_counts", "_log_normalized"]
+
+    assert all(
+        key in list(query_adata.layers) for key in expected_layers
+    ), f"Query layers should be: {expected_layers}, found: {query_adata.layers.keys()}."
+    assert all(
+        key in list(reference_adata.layers) for key in expected_layers
+    ), f"Reference layers should be: {expected_layers}, found: {reference_adata.layers.keys()}."
+
+    args_identical_query_layers = [
+        "--input",
+        input_file,
+        "--modality",
+        "rna",
+        "--align_layers_lognormalized_counts",
+        "True",
+        "--reference_layer_lognormalized",
+        "--log_normalized",
+        "--input_obs_batch",
+        "sample_id",
+        "--reference",
+        reference_file,
+        "--reference_obs_batch",
+        "donor_id",
+        "--reference_obs_label",
+        "cell_ontology_class",
+        "--reference_var_gene_names",
+        "ensemblid",
+        "--output_query",
+        output_query_file,
+        "--output_reference",
+        output_reference_file,
+    ]
+
+    with pytest.raises(subprocess.CalledProcessError) as err:
+        run_component(args_identical_query_layers)
+    assert re.search(
+        r"Layer names for raw and lognormalized counts in the query data can not be identical.",
+        err.value.stdout.decode("utf-8"),
+    )
+    args_identical_query_layers = [
+        "--input",
+        input_file,
+        "--modality",
+        "rna",
+        "--align_layers_lognormalized_counts",
+        "True",
+        "--input_layer_lognormalized",
+        "--log_normalized",
+        "--input_obs_batch",
+        "sample_id",
+        "--reference",
+        reference_file,
+        "--reference_obs_batch",
+        "donor_id",
+        "--reference_obs_label",
+        "cell_ontology_class",
+        "--reference_var_gene_names",
+        "ensemblid",
+        "--output_query",
+        output_query_file,
+        "--output_reference",
+        output_reference_file,
+    ]
+
+    with pytest.raises(subprocess.CalledProcessError) as err:
+        run_component(args_identical_query_layers)
+    assert re.search(
+        r"Layer names for raw and lognormalized counts in the reference data can not be identical.",
+        err.value.stdout.decode("utf-8"),
+    )
 
 
 def test_copy_layer(run_component, random_h5mu_path, copy_layer):

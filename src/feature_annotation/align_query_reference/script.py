@@ -30,6 +30,8 @@ par = {
     "preserve_var_index": False,
     "output_var_index": "_ori_var_index",
     "output_var_common_genes": "_common_vars",
+    "align_layers_raw_counts": True,
+    "align_layers_lognormalized_counts": False,
 }
 
 meta = {"resources_dir": "src/utils"}
@@ -139,20 +141,49 @@ def main():
 
     # Aligning layers
     logger.info("### Aligning layers")
-    logger.info("## Copying query layer...")
-    input_modality = copy_layer(
-        input_modality,
-        par["input_layer"],
-        par["output_layer"],
-        overwrite=par["overwrite_existing_key"],
-    )
-    logger.info("## Copying reference layer...")
-    reference_modality = copy_layer(
-        reference_modality,
-        par["reference_layer"],
-        par["output_layer"],
-        overwrite=par["overwrite_existing_key"],
-    )
+
+    if par["align_layers_lognormalized_counts"] and par["align_layers_raw_counts"]:
+        if par["input_layer"] == par["input_layer_lognormalized"]:
+            raise ValueError(
+                "Layer names for raw and lognormalized counts in the query data can not be identical."
+            )
+
+        if par["reference_layer"] == par["reference_layer_lognormalized"]:
+            raise ValueError(
+                "Layer names for raw and lognormalized counts in the reference data can not be identical."
+            )
+
+    if par["align_layers_raw_counts"]:
+        logger.info("## Copying query layer raw counts...")
+        input_modality = copy_layer(
+            input_modality,
+            par["input_layer"],
+            par["output_layer"],
+            overwrite=par["overwrite_existing_key"],
+        )
+        logger.info("## Copying reference layer raw counts...")
+        reference_modality = copy_layer(
+            reference_modality,
+            par["reference_layer"],
+            par["output_layer"],
+            overwrite=par["overwrite_existing_key"],
+        )
+
+    if par["align_layers_lognormalized_counts"]:
+        logger.info("## Copying query layer lognormalized counts...")
+        input_modality = copy_layer(
+            input_modality,
+            par["input_layer_lognormalized"],
+            par["output_layer_lognormalized"],
+            overwrite=par["overwrite_existing_key"],
+        )
+        logger.info("## Copying reference layerlognormalized counts...")
+        reference_modality = copy_layer(
+            reference_modality,
+            par["reference_layer_lognormalized"],
+            par["output_layer_lognormalized"],
+            overwrite=par["overwrite_existing_key"],
+        )
 
     # Aligning batch labels
     logger.info("### Aligning batch labels")

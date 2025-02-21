@@ -31,7 +31,11 @@ argument_groups:
       - name: "--input_layer"
         type: string
         required: false
-        description: The layer in the input (query) data to be used for cell type annotation if .X is not to be used. 
+        description: The layer in the input (query) data containing raw counts if .X is not to be used. 
+      - name: "--input_layer_lognormalized"
+        type: string
+        required: false
+        description: The layer in the input (query) data containing lognormalized counts if .X is not to be used.       
       - name: "--input_var_gene_names"
         type: string
         required: false
@@ -67,7 +71,11 @@ argument_groups:
         required: false
       - name: "--reference_layer"
         type: string
-        description: The layer in the reference data to be used for cell type annotation if .X is not to be used. Data are expected to be processed in the same way as the --input query dataset.
+        description: The layer in the reference data containing raw counts if .X is not to be used. Data are expected to be processed in the same way as the --input query dataset.
+        required: false
+      - name: "--reference_layer_lognormalized"
+        type: string
+        description: The layer in the reference data containing log normalized counts if .X is not to be used. Data are expected to be processed in the same way as the --input query dataset.
         required: false
       - name: "--reference_var_gene_names"
         type: string
@@ -114,7 +122,11 @@ argument_groups:
       - name: "--output_layer"
         type: string
         default: "_counts"
-        description: Name of the aligned layer in the output query and reference datasets.
+        description: Name of the aligned layer containing raw counts in the output query and reference datasets.
+      - name: "--output_layer_lognormalized"
+        type: string
+        default: "_log_normalized"
+        description: Name of the aligned layer containing log normalized counts in the output query and reference datasets.
       - name: "--output_var_gene_names"
         type: string
         default: "_gene_names"
@@ -149,6 +161,13 @@ argument_groups:
         min: 1
         description: | 
           The minimum number of genes present in both the reference and query datasets.
+      - name: "--align_layers_raw_counts"
+        type: boolean
+        default: true
+        description: Whether to align the query and reference layers containing raw counts.
+      - name: "--align_layers_lognormalized_counts"
+        type: boolean_true
+        description: Whether to align the query and reference layers containing log normalized counts.
       - name: "--unkown_celltype_label"
         type: string
         default: "Unknown"
