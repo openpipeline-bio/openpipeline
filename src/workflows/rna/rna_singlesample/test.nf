@@ -10,20 +10,23 @@ workflow test_wf {
 
   output_ch = Channel.fromList([
       [
-        id: "mitochondrial_test",
+        id: "mitochondrial_ribosomal_test",
         input: resources_test.resolve("pbmc_1k_protein_v3/pbmc_1k_protein_v3_filtered_feature_bc_matrix.h5mu"),
         min_counts: 3,
         max_counts: 10000000,
         min_genes_per_cell: 2,
         max_genes_per_cell: 10000000,
         min_cells_per_gene: 2,
+        var_gene_names: "gene_symbol",
         min_fraction_mito: 0.05,
         max_fraction_mito: 0.2,
-        var_gene_names: "gene_symbol",
         var_name_mitochondrial_genes: "mitochondrial",
+        min_fraction_ribo: 0.05,
+        max_fraction_ribo: 0.2,
+        var_name_ribosomal_genes: "ribosomal",
         // see if obs_name is automatically filled in
         // obs_name_mitochondrial_fraction: "fraction_mitochondrial",
-        output: "mitochondrial_test.final.h5mu"
+        output: "mitochondrial_ribosomal_test.final.h5mu"
       ],
       [
         id: "simple_execution_test",
@@ -47,8 +50,8 @@ workflow test_wf {
     | map { output_list ->
       assert output_list.size() == 2 : "output channel should contain two events"
       println "output_list: $output_list"
-      assert output_list.collect{it[0]} == ["mitochondrial_test", "simple_execution_test"] : "Output ID should be same as input ID"
-      assert (output_list.collect({it[1].output.getFileName().toString()}) as Set).equals(["mitochondrial_test.final.h5mu", "simple_execution_test.final.h5mu"] as Set)
+      assert output_list.collect{it[0]} == ["mitochondrial_ribosomal_test", "simple_execution_test"] : "Output ID should be same as input ID"
+      assert (output_list.collect({it[1].output.getFileName().toString()}) as Set).equals(["mitochondrial_ribosomal_test.final.h5mu", "simple_execution_test.final.h5mu"] as Set)
 
     }
 }
@@ -66,12 +69,16 @@ workflow test_wf2 {
         min_genes_per_cell: 2,
         max_genes_per_cell: 10000000,
         min_cells_per_gene: 2,
+        var_gene_names: "gene_symbol",
         min_fraction_mito: 0.05,
         max_fraction_mito: 0.2,
-        var_gene_names: "gene_symbol",
         var_name_mitochondrial_genes: "mitochondrial",
-        obs_name_mitochondrial_fraction: "foobar",
-        output: "mitochondrial_test.final.h5mu"
+        obs_name_mitochondrial_fraction: "foobar_mito",
+        min_fraction_ribo: 0.05,
+        max_fraction_ribo: 0.2,
+        var_name_ribosomal_genes: "ribosomal",
+        obs_name_ribosomal_fraction: "foobar_ribo",
+        output: "mitochondrial_ribosomal_test.final.h5mu"
       ],
     ])
     | map{ state -> [state.id, state] }
@@ -86,7 +93,7 @@ workflow test_wf2 {
       assert output_list.size() == 1 : "output channel should contain one event"
       println "output_list: $output_list"
       assert output_list.collect{it[0]} == ["test_different_fraction_column"] : "Output ID should be same as input ID"
-      assert (output_list.collect({it[1].output.getFileName().toString()}) as Set).equals(["mitochondrial_test.final.h5mu"] as Set)
+      assert (output_list.collect({it[1].output.getFileName().toString()}) as Set).equals(["mitochondrial_ribosomal_test.final.h5mu"] as Set)
 
     }
 }
