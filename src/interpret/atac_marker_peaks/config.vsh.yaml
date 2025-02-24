@@ -1,0 +1,84 @@
+name: atac_marker_peaks
+namespace: "interpret"
+description: |
+  Rank differentially accessible peaks for each group of cells.
+      
+authors:
+  - __merge__: /src/authors/vladimir_shitov.yaml
+    roles: [ author ]
+argument_groups:
+  - name: Inputs
+    arguments:
+      - name: "--input"
+        type: file
+        description: Input h5mu file
+        direction: input
+        required: true
+        example: input.h5mu
+      - name: "--modality"
+        type: string
+        default: "atac"
+        required: false
+  - name: Outputs
+    arguments:
+      - name: "--output"
+        type: file
+        description: Output h5mu file.
+        direction: output
+        example: output.h5mu
+      - name: "--output_compression"
+        type: string
+        description: The compression format to be used on the output h5mu object.
+        choices: ["gzip", "lzf"]
+        required: false
+        example: "gzip"
+      - name: "--output_marker_peaks"
+        type: file
+        description: Output tsv file with marker peaks.
+        direction: output
+        example: marker_peaks.tsv
+  - name: Arguments
+    arguments:
+      - name: "--groupby"
+        type: string
+        description: The group to use for ranking peaks.
+        required: true
+        example: "leiden"
+      - name: "--method"
+        type: string
+        description: The method to use for ranking peaks.
+        choices: ["t-test", "wilcoxon", "logreg", "t-test_overestim_var"]
+        required: false
+        default: "t-test"
+resources:
+  - type: python_script
+    path: script.py
+  - path: /src/utils/setup_logger.py
+test_resources:
+  - type: python_script
+    path: test.py
+  - path: /resources_test/cellranger_atac_tiny_bcl/counts/
+engines:
+  - type: docker
+    image: python:3.11-slim
+    setup:
+      - type: apt
+        packages: 
+          - procps
+          - pkg-config  # Otherwise h5py installation fails, which is required for scanpy
+          - libhdf5-dev
+          - gcc
+      - type: python
+        __merge__: [/src/base/requirements/anndata_mudata.yaml, .]
+        __merge__: [ /src/base/requirements/scanpy.yaml, .]
+        packages:
+          - muon~=0.1.5
+          - pysam~=0.22.0
+    test_setup:
+      - type: python
+        __merge__: [ /src/base/requirements/viashpy.yaml, .]
+runners:
+  - type: executable
+  - type: nextflow
+    directives:
+      label: [singlecpu, midmem]

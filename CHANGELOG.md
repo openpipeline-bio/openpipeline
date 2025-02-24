@@ -230,6 +230,8 @@
 
 * `transform/regress_out`: Allow providing 'input' and 'output' layers for scanpy regress_out functionality (PR #863).
 
+* `interpret/atac_marker_peaks`: Added a component to identify marker peaks in ATAC-seq data (PR #868).
+* 
 * Added `transform/tfidf` component: normalize ATAC data with TF-IDF (PR #870).
 
 * Added `dimred/lsi` component (PR #552).
