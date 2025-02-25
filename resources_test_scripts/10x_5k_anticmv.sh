@@ -77,7 +77,6 @@ fi
 
 
 # Run mapping pipeline
-# TODO: Also include conversion to h5mu
 cat > /tmp/params.yaml << HERE
 param_list:
 - id: "$ID"
@@ -97,7 +96,6 @@ feature_reference: "$feature_reference"
 publish_dir: "$OUT/processed"
 HERE
 
-
 nextflow \
   run . \
   -main-script target/nextflow/mapping/cellranger_multi/main.nf \
@@ -107,7 +105,7 @@ nextflow \
   -c src/workflows/utils/labels.config \
   -c src/workflows/utils/errorstrat_ignore.config
 
-# Create h5mu
+# Convert to h5mu
 cat > /tmp/params.yaml << HERE
 id: "$ID"
 input: "$OUT/processed/10x_5k_anticmv.cellranger_multi.output.output"
@@ -123,14 +121,33 @@ nextflow \
   -params-file /tmp/params.yaml \
   -c src/workflows/utils/labels.config
 
+# run qc workflow
 cat > /tmp/params.yaml << HERE
 id: "$ID"
 input: "$OUT/$orig_sample_id.h5mu"
+var_name_mitochondrial_genes: mitochondrial
+var_name_ribosomal_genes: ribosomal
+publish_dir: "$OUT/"
+output: "${orig_sample_id}_qc.h5mu"
+HERE
+
+nextflow \
+  run . \
+  -main-script target/nextflow/workflows/qc/qc/main.nf \
+  -resume \
+  -profile docker,mount_temp \
+  -params-file /tmp/params.yaml \
+  -c src/workflows/utils/labels.config
+
+
+# Run full pipeline
+cat > /tmp/params.yaml << HERE
+id: "$ID"
+input: "$OUT/${orig_sample_id}_qc.h5mu"
 publish_dir: "$OUT/"
 output: "${orig_sample_id}_mms.h5mu"
 HERE
 
-# Run full pipeline
 nextflow \
   run . \
   -main-script src/workflows/multiomics/full_pipeline/main.nf \
