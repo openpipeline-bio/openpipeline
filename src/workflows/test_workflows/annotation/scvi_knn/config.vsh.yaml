@@ -1,0 +1,35 @@
+name: "scvi_knn_test"
+namespace: "test_workflows/annotation"
+description: "This component tests the output of the annotation of the scvi_knn of workflow."
+authors:
+  - __merge__: /src/authors/dorien_roosen.yaml
+argument_groups:
+  - name: Inputs
+    arguments:
+      - name: "--input"
+        type: file
+        required: true
+        description: Path to h5mu output.
+        example: foo.final.h5mu
+resources:
+  - type: python_script
+    path: script.py
+  - path: /src/utils/setup_logger.py
+  - path: /src/base/openpipelinetestutils
+    dest: openpipelinetestutils
+engines:
+  - type: docker
+    image: python:3.12-slim
+    setup:
+      - type: docker
+        copy: ["openpipelinetestutils /opt/openpipelinetestutils"]
+      - type: apt
+        packages: 
+          - procps
+      - type: python
+        packages: /opt/openpipelinetestutils
+      - type: python
+        __merge__: [/src/base/requirements/anndata_mudata.yaml, /src/base/requirements/viashpy.yaml, .]
+runners:
+  - type: executable
+  - type: nextflow
