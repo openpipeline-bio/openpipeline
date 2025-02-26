@@ -1,0 +1,61 @@
+functionality:
+  name: dsb_normalize
+  namespace: protein_processing
+  description: "Normalize protein expression with DSB (Denoised and Scaled by Background)."
+  authors:
+    - name: Xichen Wu
+  arguments:
+    - name: "--data_raw"
+      type: file
+      required: true
+      description: "AnnData object with protein expression counts or MuData object with 'prot' modality containing raw (unfiltered, including empty droplets) data."
+    - name: "--cell_index"
+      type: file
+      description: "A csv file containing filtered cell barcodes."
+    - name: "--empty_index"
+      type: file
+      description: "A csv file containing empty cell barcodes."
+    - name: "--pseudocount"
+      type: integer
+      default: 10
+      description: "Pseudocount to add before log-transform."
+    - name: "--denoise_counts"
+      type: boolean_true
+      description: "Whether to perform denoising."
+    - name: "--isotype_controls"
+      type: string
+      multiple: true
+      description: "Names of the isotype controls. If ``None``, isotype controls will not be used."
+    - name: "--add_layer"
+      type: boolean_true
+      description: "Whether to add a ``'dsb'`` layer instead of assigning to the X matrix."
+    - name: "--random_state"
+      type: integer
+      default: 1
+      description: "Random seed."
+    - name: "--output"
+      type: file
+      direction: output
+      description: dsb_normalize output directory
+      example: "dsb_output"
+  resources:
+    - type: python_script
+      path: script.py
+  test_resources:
+    - type: python_script
+      path: test.py
+    - path: ../../../resources_test/pbmc_1k_protein_v3
+platforms:
+  - type: docker
+    image: python:3.8
+    setup:
+      - type: python
+        packages:
+          - scanpy~=1.9.1
+          - muon
+          - numpy
+          - mudata~=0.2.0
+          - anndata~=0.8.0
+  - type: nextflow
+    directives:
+      label: midcpu
