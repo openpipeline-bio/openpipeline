@@ -7,6 +7,8 @@ info:
       namespace: transform
     - name: remove_modality
       namespace: filter
+    - name: assert_test_workflow_2_output
+      namespace: test_workflows/multiomics/process_samples
 authors:
   - __merge__: /src/authors/dries_schaumont.yaml
     roles: [ author, maintainer ]

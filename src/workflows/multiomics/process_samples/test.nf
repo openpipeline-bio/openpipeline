@@ -4,6 +4,7 @@ targetDir = params.rootDir + "/target/nextflow"
 include { remove_modality }  from targetDir + '/filter/remove_modality/main.nf'
 include { move_layer } from targetDir + '/transform/move_layer/main.nf' 
 include { process_samples } from targetDir + "/workflows/multiomics/process_samples/main.nf"
+include { assert_test_workflow_2_output } from targetDir + "/test_workflows/multiomics/process_samples/assert_test_workflow_2_output/main.nf"
 
 params.resources_test = params.rootDir + "/resources_test"
 
@@ -47,7 +48,7 @@ workflow test_wf2 {
 
   resources_test = file(params.resources_test)
 
-  output_ch = Channel.fromList([
+  input_ch = Channel.fromList([
     [
         id: "pbmc",
         input: resources_test.resolve("pbmc_1k_protein_v3/pbmc_1k_protein_v3_filtered_feature_bc_matrix.h5mu"),
@@ -81,18 +82,40 @@ workflow test_wf2 {
     ],
   ])
   | map{ state -> [state.id, state] }
-  | process_samples
-  | view { output ->
-    assert output.size() == 2 : "outputs should contain two elements; [id, file]"
-    assert output[1].output.toString().endsWith(".h5mu") : "Output file should be a h5mu file. Found: ${output[1].output}"
-    "Output: $output"
-  }
-  | toSortedList()
-  | map { output_list ->
-    // The result of this pipeline is always 1 merged sample, regardless of the number of input samples. 
-    assert output_list.size() == 1 : "output channel should contain one event"
-    assert output_list[0][0] == "merged" : "Output ID should be 'merged'"
-  }
+
+  processed_ch = input_ch
+    | process_samples.run(
+        toState: { id, output, state -> output}
+    )
+
+
+  assert_ch = processed_ch
+    | toSortedList()
+    | map { output_list ->
+      assert output_list.size() == 1 : "output channel should contain one event"
+      assert output_list[0][0] == "merged" : "Output ID should be 'merged'"
+      output_list
+    }
+
+  
+  test_ch = processed_ch.combine(input_ch)
+    | map {output_id, output_state, input_id, input_state ->
+      def new_event = [output_id, output_state + ["input": input_state.input]]
+      return new_event
+    }
+    | groupTuple()
+    | map { id, events ->
+      def output_file = events[0].output
+      def new_state = ["output": output_file, "input": events.collect{it.input}]
+      [id, new_state]
+
+    }
+    | assert_test_workflow_2_output.run(
+      fromState: [
+        "input": "output",
+        "orig_input": "input"
+      ],
+    )
 }
 
 workflow test_wf3 {

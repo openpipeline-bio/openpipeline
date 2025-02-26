@@ -1,0 +1,42 @@
+name: "assert_test_workflow_2_output"
+namespace: "test_workflows/multiomics/process_samples"
+description: "This component tests the output of the integration test of process_samples test_wf."
+authors:
+  - __merge__: /src/authors/dries_schaumont.yaml
+argument_groups:
+  - name: Inputs
+    arguments:
+      - name: "--input"
+        type: file
+        required: true
+        example: test.h5mu
+      - name: "--orig_input"
+        type: file
+        multiple: true
+        required: true
+        description: Path to the original input file.
+        example: input.h5mu
+resources:
+  - type: python_script
+    path: script.py
+  - path: /src/utils/setup_logger.py
+  - path: /src/base/openpipelinetestutils
+    dest: openpipelinetestutils
+engines:
+  - type: docker
+    image: python:3.12-slim
+    setup:
+      - type: python
+        __merge__: [/src/base/requirements/anndata_mudata.yaml, .]
+      - type: docker
+        copy: ["openpipelinetestutils /opt/openpipelinetestutils"]
+      - type: apt
+        packages: 
+          - procps
+      - type: python
+        packages: /opt/openpipelinetestutils
+runners:
+  - type: executable
+  - type: nextflow
+    directives:
+      label: ["midmem"]
