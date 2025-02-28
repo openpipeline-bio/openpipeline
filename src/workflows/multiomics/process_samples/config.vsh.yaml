@@ -98,6 +98,15 @@ argument_groups:
         type: double
         example: 0.2
         description: Maximum fraction of UMIs that are mitochondrial.
+
+      - name: "--rna_min_fraction_ribo"
+        example: 0
+        type: double
+        description: Minimum fraction of UMIs that are mitochondrial.
+      - name: "--rna_max_fraction_ribo"
+        type: double
+        example: 0.2
+        description: Maximum fraction of UMIs that are mitochondrial.
   - name: "CITE-seq filtering options"
     arguments:
       - name: "--prot_min_counts"
@@ -162,8 +171,16 @@ argument_groups:
         description: |
           If specified, highly-variable genes are selected within each batch separately and merged. This simple 
           process avoids the selection of batch-specific genes and acts as a lightweight batch correction method.
-  - name: "Mitochondrial Gene Detection"
+  - name: "Mitochondrial & Ribosomal Gene Detection"
     arguments:
+      - name: "--var_gene_names"
+        required: false
+        example: "gene_symbol"
+        type: string
+        description: |
+          .var column name to be used to detect mitochondrial/ribosomal genes instead of .var_names (default if not set).
+          Gene names matching with the regex value from --mitochondrial_gene_regex or --ribosomal_gene_regex will be 
+          identified as mitochondrial or ribosomal genes, respectively. 
       - name: "--var_name_mitochondrial_genes"
         type: string
         required: false
@@ -176,14 +193,6 @@ argument_groups:
           When specified, write the fraction of counts originating from mitochondrial genes 
           (based on --mitochondrial_gene_regex) to an .obs column with the specified name.
           Requires --var_name_mitochondrial_genes.
-      - name: "--var_gene_names"
-        required: false
-        example: "gene_symbol"
-        type: string
-        description: |
-          .var column name to be used to detect mitochondrial genes instead of .var_names (default if not set).
-          Gene names matching with the regex value from --mitochondrial_gene_regex will be identified
-          as a mitochondrial gene.
       - name: --mitochondrial_gene_regex
         type: string
         description: |
@@ -191,6 +200,25 @@ argument_groups:
           By default will detect human and mouse mitochondrial genes from a gene symbol.
         required: false
         default: "^[mM][tT]-"
+      - name: "--var_name_ribosomal_genes"
+        type: string
+        required: false
+        description: |
+          In which .var slot to store a boolean array corresponding the ribosomal genes.
+      - name: "--obs_name_ribosomal_fraction"
+        type: string
+        required: false
+        description: |
+          When specified, write the fraction of counts originating from ribosomal genes 
+          (based on --ribosomal_gene_regex) to an .obs column with the specified name.
+          Requires --var_name_ribosomal_genes.
+      - name: --ribosomal_gene_regex
+        type: string
+        description: |
+          Regex string that identifies ribosomal genes from --var_gene_names.
+          By default will detect human and mouse ribosomal genes from a gene symbol.
+        required: false
+        default: "^[Mm]?[Rr][Pp][LlSs]"
   - name: "QC metrics calculation options"
     arguments:
       - name: "--var_qc_metrics"
