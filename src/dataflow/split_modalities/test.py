@@ -4,7 +4,7 @@ import mudata as md
 import anndata as ad
 import pandas as pd
 import re
-from openpipelinetestutils.asserters import assert_annotation_objects_equal
+from openpipelinetest_utils.asserters import assert_annotation_objects_equal
 from textwrap import dedent
 
 ## VIASH START

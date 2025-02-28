@@ -3,7 +3,7 @@ import pytest
 import pandas as pd
 from anndata import AnnData
 from mudata import MuData, read_h5mu
-from openpipelinetestutils.asserters import assert_annotation_objects_equal
+from openpipelinetest_utils.asserters import assert_annotation_objects_equal
 
 ## VIASH START
 meta = {

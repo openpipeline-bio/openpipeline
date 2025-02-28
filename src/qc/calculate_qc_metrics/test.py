@@ -10,7 +10,7 @@ import scipy
 import uuid
 from pandas.testing import assert_series_equal
 from itertools import product
-from openpipelinetestutils.asserters import assert_annotation_objects_equal
+from openpipelinetest_utils.asserters import assert_annotation_objects_equal
 
 ## VIASH START
 meta = {

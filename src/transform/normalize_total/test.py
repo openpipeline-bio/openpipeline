@@ -2,7 +2,7 @@ import sys
 import pytest
 import mudata as mu
 import numpy as np
-from openpipelinetestutils.asserters import assert_annotation_objects_equal
+from openpipelinetest_utils.asserters import assert_annotation_objects_equal
 
 ## VIASH START
 meta = {

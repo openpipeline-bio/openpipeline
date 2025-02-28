@@ -15,23 +15,10 @@ resources:
   - type: python_script
     path: script.py
   - path: /src/utils/setup_logger.py
-  - path: /src/base/openpipelinetestutils
-    dest: openpipelinetestutils
 engines:
   - type: docker
     image: python:3.12-slim
-    setup:
-      - type: docker
-        copy: ["openpipelinetestutils /opt/openpipelinetestutils"]
-      - type: apt
-        packages: 
-          - procps
-      - type: python
-        packages: /opt/openpipelinetestutils
-      - type: python
-        pypi:
-          - mudata
-        __merge__: /src/base/requirements/viashpy.yaml
+    __merge__: /src/base/requirements/testworkflows_setup.yaml
 runners:
   - type: executable
   - type: nextflow

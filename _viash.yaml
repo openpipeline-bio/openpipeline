@@ -21,7 +21,6 @@ info:
       dest: resources_test
 
 config_mods: |
-  .test_resources += {path: '/src/base/openpipelinetestutils', dest: 'openpipelinetestutils'}
   .resources += {path: '/src/workflows/utils/labels.config', dest: 'nextflow_labels.config'}
   .runners[.type == 'nextflow'].directives.tag := '$id'
   .runners[.type == 'nextflow'].config.script := 'includeConfig("nextflow_labels.config")'

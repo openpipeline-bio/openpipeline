@@ -1,8 +1,11 @@
 from mudata import read_h5mu
 import pytest
 
-# from openpipelinetestutils.asserters import assert_annotation_objects_equal
+# from openpipelinetest_utils.asserters import assert_annotation_objects_equal
 import sys
+import os
+import shutil
+from pathlib import Path
 
 ##VIASH START
 par = {
@@ -14,7 +17,7 @@ meta = {"resources_dir": "src/base/openpipelinetestutils"}
 
 ##VIASH END
 sys.path.append(meta["resources_dir"])
-from openpipelinetestutils.asserters import assert_annotation_objects_equal
+from openpipelinetest_utils.asserters import assert_annotation_objects_equal
 
 
 @pytest.fixture
@@ -64,3 +67,13 @@ def test_run(input_mudata, orig_input_mudata):
     assert_annotation_objects_equal(
         input_mudata.mod["rna"], orig_input_mudata.mod["rna"], promote_precision=True
     )
+
+
+if __name__ == "__main__":
+    HERE_DIR = Path(__file__).resolve().parent
+    from importlib import resources
+    shutil.copyfile(
+        resources.files("openpipeline_testutils").joinpath("conftest.py"),
+        os.path.join(HERE_DIR, "conftest.py"),
+    )
+    sys.exit(pytest.main(["--import-mode=importlib"]))

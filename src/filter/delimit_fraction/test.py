@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 import numpy as np
 from subprocess import CalledProcessError
-from openpipelinetestutils.asserters import assert_annotation_objects_equal
+from openpipelinetest_utils.asserters import assert_annotation_objects_equal
 
 ## VIASH START
 meta = {

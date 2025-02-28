@@ -4,7 +4,7 @@ import os
 import pytest
 import re
 import mudata as mu
-from openpipelinetestutils.asserters import assert_annotation_objects_equal
+from openpipelinetest_utils.asserters import assert_annotation_objects_equal
 import scvi
 
 ## VIASH START

@@ -1,6 +1,6 @@
 import mudata as mu
-from openpipelinetestutils.asserters import assert_annotation_objects_equal
-from openpipelinetestutils.utils import remove_annotation_column
+from openpipelinetest_utils.asserters import assert_annotation_objects_equal
+from openpipelinetest_utils.utils import remove_annotation_column
 
 ##VIASH START
 par = {

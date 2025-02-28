@@ -31,8 +31,9 @@ def test_run():
 
 if __name__ == "__main__":
     HERE_DIR = Path(__file__).resolve().parent
+    from importlib import resources
     shutil.copyfile(
-        os.path.join(meta["resources_dir"], "openpipelinetestutils", "conftest.py"),
+        resources.files("openpipeline_testutils").joinpath("conftest.py"),
         os.path.join(HERE_DIR, "conftest.py"),
     )
     sys.exit(pytest.main(["--import-mode=importlib"]))

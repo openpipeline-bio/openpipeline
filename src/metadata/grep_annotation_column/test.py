@@ -7,8 +7,8 @@ import math
 from anndata import AnnData
 from mudata import MuData, read_h5mu
 from subprocess import CalledProcessError
-from openpipelinetestutils.asserters import assert_annotation_objects_equal
-from openpipelinetestutils.utils import remove_annotation_column
+from openpipelinetest_utils.asserters import assert_annotation_objects_equal
+from openpipelinetest_utils.utils import remove_annotation_column
 from itertools import permutations, islice
 
 

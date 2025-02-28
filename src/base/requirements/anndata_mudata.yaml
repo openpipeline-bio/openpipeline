@@ -1,6 +1,6 @@
 __merge__: [/src/base/requirements/anndata.yaml, .]
 packages:
-  - mudata~=0.3.1 
+  - mudata~=0.3.1
 # Make sure that awkward is not installed. Currently, support of awkward arrays
 # in anndata is experimental, and it is enabled based on whether or not the package
 # is available. By making sure that awkward is not installed, the functionality is
