@@ -1,5 +1,11 @@
 # openpipelines 2.1.0
 
+## BREAKING CHANGES
+
+* Removed `src/metadata/duplicate_obs` and `src/metadata/duplicate_var` components (PR #952).
+
+* Updated implementation of query/reference alignment for `workflows/annotation/scgpt_integration_knn` (PR #952).
+
 ## NEW FUNCTIONALITY
 
 * `filter_with_scrublet`: add `expected_doublet_rate`, `stdev_doublet_rate`, `n_neighbors` and `sim_doublet_ratio` arguments (PR #974).

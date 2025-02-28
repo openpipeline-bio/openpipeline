@@ -15,86 +15,32 @@ workflow run_wf {
         [id, new_state]
       }
       | view {"After adding join_id: $it"}
-      // Add 'query' id to .obs columns of query dataset
-      | add_id.run(
+      // Allign query and reference datasets
+      | align_query_reference.run(
         fromState: [
           "input": "input",
+          "modality": "modality",
+          "input_layer": "input_layer",
+          "input_var_gene_names": "input_var_gene_names",
+          "input_obs_batch": "input_obs_batch_label",
+          "reference": "reference",
+          "reference_layer": "reference_layer",
+          "reference_var_gene_names": "reference_var_gene_names",
+          "reference_obs_batch": "reference_obs_batch_label",
+          "input_reference_gene_overlap": "input_reference_gene_overlap",
+          "overwrite_existing_key": "overwrite_existing_key"
         ],
-        args:[
+        args: [
           "input_id": "query",
-          "obs_output": "dataset",
-        ],
-        toState: ["input": "output"]
-      )
-      // Add 'reference'id to .obs columns of reference dataset
-      | add_id.run(
-        fromState:[
-          "input": "reference",
-        ],
-        args:[
-          "input_id": "reference",
-          "obs_output": "dataset"
-        ],
-        toState: ["reference": "output"]
-      )
-      // Make sure that query and reference dataset have batch information in the same .obs column
-      // By copying the respective .obs columns to the obs column "batch_label"
-      | duplicate_obs.run(
-        fromState: [
-          "input": "input",
-          "modality": "modality",
-          "input_obs_key": "input_obs_batch_label",
-          "overwrite_existing_key": "overwrite_existing_key"
-        ],
-        args: [
-          "output_obs_key": "batch_label"
+          "reference_id": "reference",
+          "output_layer": "_counts",
+          "output_var_gene_names": "_gene_names",
+          "output_obs_batch": "_sample_id",
+          "output_obs_id": "_dataset"
         ],
         toState: [
-          "input": "output"
-        ]
-      )
-      | duplicate_obs.run(
-        fromState: [
-          "input": "reference",
-          "modality": "modality",
-          "input_obs_key": "reference_obs_batch_label",
-          "overwrite_existing_key": "overwrite_existing_key"
-        ],
-        args: [
-          "output_obs_key": "batch_label"
-        ],
-        toState: [
-          "reference": "output"
-        ]
-      )
-      // Make sure the .var columns containing the gene names has the same name prior to integration
-      // By copying the respective .var columns to the var column "gene_symbols"
-      | duplicate_var.run(
-        fromState: [
-          "input": "input",
-          "modality": "modality",
-          "input_var_key": "input_var_gene_names",
-          "overwrite_existing_key": "overwrite_existing_key"
-        ],
-        args: [
-          "output_var_key": "gene_symbols",
-        ],
-        toState: [
-          "input": "output"
-        ]
-      )
-      | duplicate_var.run(
-        fromState: [
-          "input": "reference",
-          "modality": "modality",
-          "input_var_key": "reference_var_gene_names",
-          "overwrite_existing_key": "overwrite_existing_key"
-        ],
-        args: [
-          "output_var_key": "gene_symbols",
-        ],
-        toState: [
-          "reference": "output"
+          "input": "output_query",
+          "reference": "output_reference"
         ]
       )
       // Concatenate query and reference datasets prior to integration
@@ -116,7 +62,6 @@ workflow run_wf {
             "id": id,
             "input": state.input,
             "modality": state.modality,
-            "input_layer": state.input_layer,
             "model": state.model,
             "model_vocab": state.model_vocab,
             "model_config": state.model_config,
@@ -134,8 +79,9 @@ workflow run_wf {
           ]
         },
         args: [
-          "obs_batch_label": "batch_label",
-          "var_gene_names": "gene_symbols"
+          "input_layer": "_counts",
+          "obs_batch_label": "_sample_id",
+          "var_gene_names": "_gene_names"
         ],
         toState: ["input": "output"]
       )
@@ -147,7 +93,7 @@ workflow run_wf {
           "modality": "modality"
         ],
         args: [
-          "obs_feature": "dataset",
+          "obs_feature": "_dataset",
           "output_files": "sample_files.csv",
           "drop_obs_nan": "true",
           "output": "ref_query"

@@ -35,8 +35,7 @@ argument_groups:
       - name: "--input_layer"
         type: string
         required: False
-        description: |
-          Mudata layer (key from layers) to use as input data for scGPT integration; if not specified, X is used. Should match the layer name of the reference dataset.
+        description: The layer in the input data to be used for cell type annotation if .X is not to be used. 
       - name: "--input_var_gene_names"
         type: string
         required: false
@@ -47,6 +46,12 @@ argument_groups:
         description: "The .obs field in the input (query) dataset containing the batch labels."
         example: "sample"
         required: true
+      - name: "--input_reference_gene_overlap"
+        type: integer
+        default: 100
+        min: 1
+        description: | 
+          The minimum number of genes present in both the reference and query datasets.
       - name: "--overwrite_existing_key"
         type: boolean_true
         description: If provided, will overwrite existing fields in the input dataset when data are copied during the reference alignment process.
@@ -58,6 +63,10 @@ argument_groups:
         type: file
         description: Reference dataset consisting of observations with cell type labels present in the .obs --reference_obs_batch_label column to train the classifier on. The dataset is expected to be pre-processed in the same way as the --input query dataset(s).
         example: reference.h5mu
+      - name: "--reference_layer"
+        type: string
+        required: False
+        description: The layer in the reference data to be used for cell type annotation if .X is not to be used. 
       - name: "--reference_obs_targets"
         type: string
         example: [ ann_level_1, ann_level_2, ann_level_3, ann_level_4, ann_level_5, ann_finest_level ]
@@ -234,9 +243,7 @@ dependencies:
   - name: labels_transfer/knn
   - name: dataflow/split_h5mu
   - name: dataflow/concatenate_h5mu
-  - name: metadata/add_id
-  - name: metadata/duplicate_obs
-  - name: metadata/duplicate_var
+  - name: feature_annotation/align_query_reference
 
 resources:
   - type: nextflow_script

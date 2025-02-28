@@ -157,7 +157,6 @@ dependencies:
   - name: scgpt/cross_check_genes
   - name: scgpt/binning
   - name: feature_annotation/highly_variable_features_scanpy
-  - name: filter/do_filter
   - name: scgpt/pad_tokenize
   - name: scgpt/embedding
   - name: workflows/multiomics/neighbors_leiden_umap
